@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>J.A.R.V.I.S. — AI-ассистент для команд в Telegram</title>
+<meta name="description" content="Управление задачами для команд через Telegram. AI распознаёт задачи из голоса и текста. Канбан, календарь, уведомления, интеграции с Zapier. Для команд 5-200 человек.">
+
+<!-- Open Graph -->
+<meta property="og:title" content="J.A.R.V.I.S. — AI-ассистент для команд">
+<meta property="og:description" content="Превращайте голосовые и текстовые сообщения в задачи. Управляйте командой 5-200 человек прямо из Telegram.">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ru_RU">
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Outfit:wght@200;300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   J.A.R.V.I.S. Landing Page — Tactical product showcase
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  --bg-base: #07080a;
+  --bg-surface: #0e1014;
+  --bg-elevated: #16191e;
+  --bg-hover: #1c2026;
+  
+  --border-subtle: #1f2329;
+  --border-default: #2a2f37;
+  --border-strong: #3a4049;
+  
+  --text-primary: #e8eaed;
+  --text-secondary: #9aa0a8;
+  --text-tertiary: #6c727b;
+  --text-muted: #4a4f57;
+  
+  --accent: #00d4ff;
+  --accent-dim: rgba(0, 212, 255, 0.5);
+  --accent-soft: rgba(0, 212, 255, 0.15);
+  --accent-glow: rgba(0, 212, 255, 0.08);
+  --accent-hover: #33ddff;
+  
+  --priority-high: #f87171;
+  --status-success: #4ade80;
+  --status-warning: #fbbf24;
+  
+  --font-display: 'Orbitron', system-ui, sans-serif;
+  --font-body: 'Outfit', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  
+  --radius: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 16px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+::selection { background: var(--accent); color: var(--bg-base); }
+
+a { color: inherit; text-decoration: none; }
+
+/* ─── BACKGROUND GRID (HUD ATMOSPHERE) ────────────────── */
+
+.grid-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+  background-size: 64px 64px;
+  pointer-events: none;
+  mask-image: radial-gradient(ellipse at 50% 30%, black 30%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 30%, black 30%, transparent 80%);
+}
+
+.glow-bg {
+  position: fixed;
+  top: -20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(circle, var(--accent-glow) 0%, transparent 60%);
+  z-index: -1;
+  pointer-events: none;
+  animation: glowDrift 12s ease-in-out infinite;
+}
+
+@keyframes glowDrift {
+  0%, 100% { transform: translateX(-50%) translateY(0); opacity: 1; }
+  50% { transform: translateX(-50%) translateY(80px); opacity: 0.6; }
+}
+
+/* ─── NAVIGATION ──────────────────────────────────────── */
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: rgba(7, 8, 10, 0.6);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.nav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.nav-logo {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  color: var(--accent);
+  text-shadow: 0 0 16px var(--accent-soft);
+}
+
+.nav-links {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+}
+
+.nav-link {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  transition: color 0.15s;
+}
+.nav-link:hover { color: var(--accent); }
+
+.nav-cta {
+  background: var(--accent);
+  color: var(--bg-base);
+  padding: 8px 18px;
+  border-radius: var(--radius);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+  transition: all 0.2s;
+}
+.nav-cta:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 0 24px var(--accent-soft);
+}
+
+@media (max-width: 720px) {
+  .nav-links { gap: 16px; }
+  .nav-link:not(.nav-cta) { display: none; }
+  .nav-inner { padding: 14px 20px; }
+}
+
+/* ─── HERO ────────────────────────────────────────────── */
+
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 80px 32px 60px;
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--accent);
+  text-transform: uppercase;
+  padding: 6px 14px;
+  border: 1px solid var(--accent-dim);
+  border-radius: 100px;
+  background: var(--accent-glow);
+  margin-bottom: 32px;
+  width: fit-content;
+  animation: tagFadeIn 0.8s ease-out;
+}
+.hero-tag::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 12px var(--accent);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+@keyframes tagFadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(40px, 7vw, 96px);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin-bottom: 28px;
+  animation: titleSlideUp 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.hero-title-accent {
+  color: var(--accent);
+  text-shadow: 0 0 40px var(--accent-soft);
+  position: relative;
+  display: inline-block;
+}
+
+@keyframes titleSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.hero-subtitle {
+  font-size: clamp(17px, 1.6vw, 22px);
+  line-height: 1.5;
+  color: var(--text-secondary);
+  max-width: 680px;
+  font-weight: 300;
+  margin-bottom: 48px;
+  animation: titleSlideUp 1s 0.15s both cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.hero-subtitle strong {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.hero-cta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  animation: titleSlideUp 1s 0.3s both cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.3px;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--bg-base);
+  box-shadow: 0 4px 24px var(--accent-soft);
+}
+.btn-primary:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 8px 40px var(--accent-soft), 0 0 0 1px var(--accent);
+  transform: translateY(-2px);
+}
+
+.btn-ghost {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+  background: rgba(255,255,255,0.02);
+}
+.btn-ghost:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-glow);
+}
+
+.hero-meta {
+  margin-top: 60px;
+  display: flex;
+  gap: 40px;
+  flex-wrap: wrap;
+  animation: titleSlideUp 1s 0.45s both cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.hero-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hero-meta-num {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.hero-meta-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+}
+
+/* Decorative corner brackets */
+.hero::before, .hero::after {
+  content: '';
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-color: var(--accent-dim);
+  pointer-events: none;
+}
+.hero::before {
+  top: 80px;
+  right: 32px;
+  border-top: 2px solid;
+  border-right: 2px solid;
+}
+.hero::after {
+  bottom: 60px;
+  left: 32px;
+  border-bottom: 2px solid;
+  border-left: 2px solid;
+}
+
+/* ─── SECTION COMMON ──────────────────────────────────── */
+
+.section {
+  padding: 100px 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.section-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-num::after {
+  content: '';
+  flex: 1;
+  max-width: 60px;
+  height: 1px;
+  background: var(--border-default);
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(32px, 4vw, 52px);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin-bottom: 20px;
+}
+
+.section-subtitle {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  max-width: 640px;
+  font-weight: 300;
+}
+
+/* ─── FEATURES ─────────────────────────────────────────── */
+
+.features-grid {
+  margin-top: 60px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 20px;
+}
+
+.feature {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 32px 28px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s;
+}
+.feature:hover {
+  border-color: var(--accent-dim);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+.feature:hover .feature-icon {
+  color: var(--accent);
+  transform: scale(1.1);
+}
+
+.feature::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent-dim), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.feature:hover::before { opacity: 1; }
+
+.feature-icon {
+  font-size: 32px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+  transition: all 0.3s;
+  display: inline-block;
+}
+
+.feature-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.feature-desc {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.feature-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--accent);
+  margin-top: 14px;
+  padding: 3px 9px;
+  background: var(--accent-glow);
+  border: 1px solid var(--accent-dim);
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+/* ─── HOW IT WORKS ─────────────────────────────────────── */
+
+.steps {
+  margin-top: 60px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  position: relative;
+}
+
+.step {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  position: relative;
+}
+
+.step-num {
+  font-family: var(--font-display);
+  font-size: 56px;
+  font-weight: 900;
+  color: var(--bg-elevated);
+  line-height: 1;
+  position: absolute;
+  top: 16px;
+  right: 24px;
+  letter-spacing: -0.02em;
+}
+
+.step-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--accent);
+  font-family: var(--font-display);
+  letter-spacing: 0.5px;
+}
+
+.step-desc {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.step-example {
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: var(--bg-base);
+  border-left: 2px solid var(--accent);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* ─── DEMO / VISUAL ────────────────────────────────────── */
+
+.demo-section {
+  background: linear-gradient(180deg, var(--bg-base) 0%, var(--bg-surface) 100%);
+  padding: 100px 32px;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.demo-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.demo-frame {
+  margin-top: 50px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  background: var(--bg-base);
+  position: relative;
+  aspect-ratio: 16/9;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.5), 0 0 80px var(--accent-glow);
+}
+
+.demo-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: var(--text-tertiary);
+  background:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.demo-placeholder-icon {
+  font-size: 60px;
+  color: var(--accent-dim);
+}
+
+.demo-placeholder-text {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.demo-placeholder-sub {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-family: var(--font-body);
+  text-transform: none;
+  letter-spacing: 0;
+  max-width: 360px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.demo-frame-controls {
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  display: flex;
+  gap: 6px;
+  z-index: 2;
+}
+.demo-frame-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+}
+.demo-frame-dot:nth-child(1) { background: #ff5f57; }
+.demo-frame-dot:nth-child(2) { background: #febc2e; }
+.demo-frame-dot:nth-child(3) { background: #28c840; }
+
+/* ─── USE CASES ────────────────────────────────────────── */
+
+.use-cases {
+  margin-top: 60px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.use-case {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.2s;
+  cursor: default;
+}
+.use-case:hover {
+  border-color: var(--accent-dim);
+  background: var(--bg-elevated);
+}
+
+.use-case-icon {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+.use-case-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.use-case-desc {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  line-height: 1.5;
+}
+
+/* ─── PRICING ─────────────────────────────────────────── */
+
+.pricing-grid {
+  margin-top: 60px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 24px;
+}
+
+.price {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  padding: 36px 32px;
+  position: relative;
+  transition: all 0.3s;
+}
+.price:hover {
+  transform: translateY(-6px);
+  border-color: var(--border-strong);
+  box-shadow: 0 24px 48px rgba(0,0,0,0.3);
+}
+
+.price.featured {
+  border-color: var(--accent);
+  background: linear-gradient(180deg, var(--accent-glow) 0%, var(--bg-surface) 30%);
+  box-shadow: 0 0 60px var(--accent-soft);
+}
+.price.featured:hover {
+  box-shadow: 0 24px 80px var(--accent-soft);
+}
+
+.price-badge {
+  position: absolute;
+  top: -12px;
+  right: 24px;
+  background: var(--accent);
+  color: var(--bg-base);
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.price-name {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--accent);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.price-desc {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  margin-bottom: 24px;
+  min-height: 36px;
+}
+
+.price-amount {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.price-currency {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.price-num {
+  font-family: var(--font-display);
+  font-size: 44px;
+  font-weight: 900;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.price-period {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+
+.price-recurring {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.price-recurring strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.price-features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+
+.price-features li {
+  font-size: 14px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  line-height: 1.5;
+}
+
+.price-features li::before {
+  content: '✓';
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.price-features li.disabled {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+.price-features li.disabled::before {
+  content: '✕';
+  color: var(--text-muted);
+}
+
+.price-cta {
+  display: block;
+  text-align: center;
+  padding: 13px;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s;
+  border: 1px solid var(--border-strong);
+  color: var(--text-primary);
+  background: rgba(255,255,255,0.02);
+  cursor: pointer;
+  font-family: inherit;
+  width: 100%;
+}
+.price-cta:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-glow);
+}
+
+.price.featured .price-cta {
+  background: var(--accent);
+  color: var(--bg-base);
+  border-color: var(--accent);
+}
+.price.featured .price-cta:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 0 24px var(--accent-soft);
+}
+
+.pricing-note {
+  text-align: center;
+  margin-top: 32px;
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+.pricing-note a {
+  color: var(--accent);
+  border-bottom: 1px dotted var(--accent-dim);
+}
+
+/* ─── INTEGRATIONS ─────────────────────────────────────── */
+
+.integrations {
+  margin-top: 50px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  max-width: 900px;
+}
+
+.integration {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius);
+  padding: 18px 14px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.integration:hover {
+  border-color: var(--accent-dim);
+  color: var(--accent);
+}
+
+.integration-icon {
+  font-size: 22px;
+  margin-bottom: 6px;
+  display: block;
+}
+
+/* ─── FAQ ─────────────────────────────────────────────── */
+
+.faq {
+  margin-top: 50px;
+  max-width: 800px;
+}
+
+.faq-item {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.faq-q {
+  padding: 22px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+  transition: color 0.2s;
+  user-select: none;
+}
+.faq-q:hover { color: var(--accent); }
+
+.faq-q::after {
+  content: '+';
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 300;
+  color: var(--text-tertiary);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.faq-item.open .faq-q::after {
+  content: '−';
+  color: var(--accent);
+}
+
+.faq-a {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.faq-item.open .faq-a {
+  max-height: 400px;
+}
+
+.faq-a-inner {
+  padding: 0 0 22px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* ─── CTA FINAL ───────────────────────────────────────── */
+
+.cta-final {
+  margin: 80px 32px;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 80px 40px;
+  background:
+    radial-gradient(ellipse at 50% 0%, var(--accent-glow) 0%, transparent 60%),
+    var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-final::before, .cta-final::after {
+  content: '';
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  border: 1px solid var(--accent-dim);
+  border-radius: 50%;
+  opacity: 0.3;
+}
+.cta-final::before { top: -100px; left: -100px; }
+.cta-final::after { bottom: -100px; right: -100px; }
+
+.cta-final-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: 1.1;
+  margin-bottom: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.cta-final-sub {
+  font-size: 17px;
+  color: var(--text-secondary);
+  margin-bottom: 32px;
+  max-width: 540px;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+  z-index: 1;
+}
+
+.cta-final-actions {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
+}
+
+/* ─── FOOTER ──────────────────────────────────────────── */
+
+.footer {
+  border-top: 1px solid var(--border-subtle);
+  padding: 50px 32px 30px;
+  background: var(--bg-surface);
+}
+
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 40px;
+}
+
+@media (max-width: 720px) {
+  .footer-inner { grid-template-columns: 1fr 1fr; }
+}
+
+.footer-brand {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+.footer-tagline {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  line-height: 1.6;
+  max-width: 280px;
+}
+
+.footer-col-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.footer-link {
+  display: block;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  transition: color 0.2s;
+}
+.footer-link:hover { color: var(--accent); }
+
+.footer-bottom {
+  max-width: 1200px;
+  margin: 40px auto 0;
+  padding-top: 30px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.footer-bottom a:hover { color: var(--accent); }
+
+/* ─── RESPONSIVE ─────────────────────────────────────── */
+
+@media (max-width: 720px) {
+  .section { padding: 70px 20px; }
+  .hero { padding: 50px 20px 40px; }
+  .hero::before, .hero::after { display: none; }
+  .demo-section { padding: 70px 20px; }
+  .cta-final { margin: 40px 20px; padding: 50px 24px; }
+  .footer { padding: 40px 20px 20px; }
+  .nav-inner { padding: 14px 20px; }
+}
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+<div class="glow-bg"></div>
+
+<!-- ═══ NAV ═══ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">J.A.R.V.I.S.</a>
+    <div class="nav-links">
+      <a href="#features" class="nav-link">Возможности</a>
+      <a href="#how" class="nav-link">Как работает</a>
+      <a href="#pricing" class="nav-link">Тарифы</a>
+      <a href="#faq" class="nav-link">FAQ</a>
+      <a href="https://t.me/DailyHelp" class="nav-link nav-cta">Открыть бота →</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero">
+  <div class="hero-tag">SYSTEM ONLINE — AI ASSISTANT v5</div>
+  <h1 class="hero-title">
+    Команда работает<br>
+    в <span class="hero-title-accent">Telegram</span>.<br>
+    Задачи тоже.
+  </h1>
+  <p class="hero-subtitle">
+    <strong>J.A.R.V.I.S.</strong> — AI-ассистент, который распознаёт задачи из голоса и текста прямо в Telegram. Канбан, календарь, уведомления, отчёты — без переключения на новые приложения.
+  </p>
+  <div class="hero-cta">
+    <a href="https://t.me/DailyHelp" class="btn btn-primary">
+      <span>Попробовать бесплатно</span>
+      <span>→</span>
+    </a>
+    <a href="#how" class="btn btn-ghost">
+      <span>▸</span>
+      <span>Посмотреть как работает</span>
+    </a>
+  </div>
+  <div class="hero-meta">
+    <div class="hero-meta-item">
+      <span class="hero-meta-num">5-200</span>
+      <span class="hero-meta-label">человек в команде</span>
+    </div>
+    <div class="hero-meta-item">
+      <span class="hero-meta-num">15 мин</span>
+      <span class="hero-meta-label">настройка под ключ</span>
+    </div>
+    <div class="hero-meta-item">
+      <span class="hero-meta-num">5000+</span>
+      <span class="hero-meta-label">интеграций через Zapier</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FEATURES ═══ -->
+<section class="section" id="features">
+  <div class="section-num">01 — Возможности</div>
+  <h2 class="section-title">Всё что нужно команде<br>в одном месте</h2>
+  <p class="section-subtitle">
+    Telegram уже стоит на каждом телефоне. Не нужно учить команду новому приложению — мы используем то что они уже знают.
+  </p>
+  
+  <div class="features-grid">
+    <div class="feature">
+      <div class="feature-icon">🎤</div>
+      <div class="feature-title">Голосовой ввод</div>
+      <p class="feature-desc">
+        Скажи задачу голосом — AI расшифрует и создаст карточку с приоритетом, дедлайном и исполнителем.
+      </p>
+      <span class="feature-tag">AI POWERED</span>
+    </div>
+    
+    <div class="feature">
+      <div class="feature-icon">🤖</div>
+      <div class="feature-title">Понимает контекст</div>
+      <p class="feature-desc">
+        «Напомни в пятницу в 10 позвонить клиенту» — бот сам определит дату, время, тип задачи и кому она.
+      </p>
+      <span class="feature-tag">CLAUDE AI</span>
+    </div>
+    
+    <div class="feature">
+      <div class="feature-icon">📊</div>
+      <div class="feature-title">Веб-дашборд</div>
+      <p class="feature-desc">
+        Канбан, календарь, хронология (Gantt), табличный список — все виды как в Jira. Drag &amp; drop.
+      </p>
+      <span class="feature-tag">JIRA-STYLE</span>
+    </div>
+    
+    <div class="feature">
+      <div class="feature-icon">🔔</div>
+      <div class="feature-title">Личные уведомления</div>
+      <p class="feature-desc">
+        Каждый исполнитель получает уведомления в личку. О новых задачах, дедлайнах, комментариях, изменениях.
+      </p>
+      <span class="feature-tag">REAL-TIME</span>
+    </div>
+    
+    <div class="feature">
+      <div class="feature-icon">⚡</div>
+      <div class="feature-title">Интеграции</div>
+      <p class="feature-desc">
+        Google Calendar, Slack, Notion, Gmail, Sheets — через Zapier и Make.com. Веб-хуки на каждое событие.
+      </p>
+      <span class="feature-tag">5000+ APPS</span>
+    </div>
+    
+    <div class="feature">
+      <div class="feature-icon">🌅</div>
+      <div class="feature-title">Утренний дайджест</div>
+      <p class="feature-desc">
+        Каждое утро в 9:00 команда получает сводку: что сегодня, что просрочено, что критично. Без напоминаний.
+      </p>
+      <span class="feature-tag">DAILY</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ HOW IT WORKS ═══ -->
+<section class="section" id="how">
+  <div class="section-num">02 — Workflow</div>
+  <h2 class="section-title">Как это работает</h2>
+  <p class="section-subtitle">
+    Три шага от голосового сообщения до выполненной задачи в дашборде.
+  </p>
+  
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-title">Создаёшь</div>
+      <p class="step-desc">
+        Напиши боту в Telegram или отправь голосовое. AI извлечёт суть — название, приоритет, дедлайн, исполнителя.
+      </p>
+      <div class="step-example">
+        «Срочно подготовить отчёт<br>для @ivan до пятницы»
+      </div>
+    </div>
+    
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-title">Управляешь</div>
+      <p class="step-desc">
+        Задача появляется в дашборде и канбане. Исполнитель получает уведомление в личку. Все видят прогресс.
+      </p>
+      <div class="step-example">
+        ☐ Подготовить отчёт<br>
+        🔴 Высокий · @ivan · 17 мая
+      </div>
+    </div>
+    
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-title">Завершаешь</div>
+      <p class="step-desc">
+        Перетаскиваешь карточку в «Готово». Команда узнаёт о выполнении. Бот автоматически архивирует через 7 дней.
+      </p>
+      <div class="step-example">
+        ✓ Выполнено<br>
+        Заархивирована: 24 мая
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ DEMO ═══ -->
+<section class="demo-section" id="demo">
+  <div class="demo-inner">
+    <div class="section-num">03 — Интерфейс</div>
+    <h2 class="section-title">Профессиональный дашборд<br>с эстетикой Iron Man</h2>
+    <p class="section-subtitle">
+      Тёмная тема, кибер-эстетика и плавные анимации. Канбан, календарь, Gantt, табличный список — переключайся между видами одним кликом.
+    </p>
+    
+    <div class="demo-frame">
+      <div class="demo-frame-controls">
+        <div class="demo-frame-dot"></div>
+        <div class="demo-frame-dot"></div>
+        <div class="demo-frame-dot"></div>
+      </div>
+      <div class="demo-placeholder">
+        <div class="demo-placeholder-icon">▦</div>
+        <div class="demo-placeholder-text">Live Demo</div>
+        <div class="demo-placeholder-sub">
+          Замените этот блок на скриншот дашборда или встроенное видео (Loom / YouTube)
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ USE CASES ═══ -->
+<section class="section">
+  <div class="section-num">04 — Кому подходит</div>
+  <h2 class="section-title">Для команд<br>любых направлений</h2>
+  <p class="section-subtitle">
+    От строительных бригад до маркетинговых агентств — везде где есть команда и нужно координировать задачи.
+  </p>
+  
+  <div class="use-cases">
+    <div class="use-case">
+      <div class="use-case-icon">🏗</div>
+      <div class="use-case-title">Строительные компании</div>
+      <div class="use-case-desc">Бригады на объектах, прорабы, поставки материалов</div>
+    </div>
+    <div class="use-case">
+      <div class="use-case-icon">📣</div>
+      <div class="use-case-title">Маркетинг-агентства</div>
+      <div class="use-case-desc">Контент, дизайн, кампании, дедлайны клиентов</div>
+    </div>
+    <div class="use-case">
+      <div class="use-case-icon">💼</div>
+      <div class="use-case-title">Отделы продаж</div>
+      <div class="use-case-desc">Лиды, звонки, встречи, отчётность по менеджерам</div>
+    </div>
+    <div class="use-case">
+      <div class="use-case-icon">🍽</div>
+      <div class="use-case-title">Рестораны и кофейни</div>
+      <div class="use-case-desc">Смены, закупки, поручения персоналу</div>
+    </div>
+    <div class="use-case">
+      <div class="use-case-icon">⚖</div>
+      <div class="use-case-title">Юридические фирмы</div>
+      <div class="use-case-desc">Дела, сроки судов, документооборот</div>
+    </div>
+    <div class="use-case">
+      <div class="use-case-icon">💻</div>
+      <div class="use-case-title">IT-команды</div>
+      <div class="use-case-desc">Спринты, задачи разработки, дежурства</div>
+    </div>
+    <div class="use-case">
+      <div class="use-case-icon">💐</div>
+      <div class="use-case-title">Event-агентства</div>
+      <div class="use-case-desc">Свадьбы, корпоративы, многозадачные проекты</div>
+    </div>
+    <div class="use-case">
+      <div class="use-case-icon">🏥</div>
+      <div class="use-case-title">Медицина и клиники</div>
+      <div class="use-case-desc">Расписание, пациенты, обходы, отчёты</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PRICING ═══ -->
+<section class="section" id="pricing">
+  <div class="section-num">05 — Тарифы</div>
+  <h2 class="section-title">Прозрачные цены<br>для бизнеса</h2>
+  <p class="section-subtitle">
+    Установка и кастомизация под вашу команду. Поддержка включена. Возврат денег если не подойдёт в первые 14 дней.
+  </p>
+  
+  <div class="pricing-grid">
+    <!-- Стартер -->
+    <div class="price">
+      <div class="price-name">Стартер</div>
+      <div class="price-desc">Для небольших команд до 15 человек. Базовый набор функций.</div>
+      <div class="price-amount">
+        <span class="price-currency">$</span>
+        <span class="price-num">200</span>
+      </div>
+      <div class="price-period">единоразово · установка</div>
+      <div class="price-recurring">
+        + <strong>$30/мес</strong> за поддержку и хостинг
+      </div>
+      <ul class="price-features">
+        <li>До 15 пользователей</li>
+        <li>Голосовой ввод задач</li>
+        <li>AI-распознавание</li>
+        <li>Веб-дашборд (канбан + календарь)</li>
+        <li>Уведомления в Telegram</li>
+        <li>Базовая поддержка email</li>
+        <li class="disabled">Интеграция с Zapier</li>
+        <li class="disabled">Хронология (Gantt)</li>
+      </ul>
+      <a href="#contact" class="price-cta">Выбрать Стартер</a>
+    </div>
+    
+    <!-- Бизнес (FEATURED) -->
+    <div class="price featured">
+      <div class="price-badge">Популярный</div>
+      <div class="price-name">Бизнес</div>
+      <div class="price-desc">Для растущих команд до 50 человек. Все функции.</div>
+      <div class="price-amount">
+        <span class="price-currency">$</span>
+        <span class="price-num">500</span>
+      </div>
+      <div class="price-period">единоразово · установка + кастомизация</div>
+      <div class="price-recurring">
+        + <strong>$50/мес</strong> за поддержку и хостинг
+      </div>
+      <ul class="price-features">
+        <li>До 50 пользователей</li>
+        <li>Всё из Стартер</li>
+        <li>Все виды дашборда: канбан, календарь, хронология, табличный</li>
+        <li>Интеграции с Zapier и Make.com</li>
+        <li>Веб-хуки на любые события</li>
+        <li>Утренний дайджест команде</li>
+        <li>Подзадачи, комментарии, теги</li>
+        <li>Приоритетная поддержка в Telegram</li>
+        <li>Обучение команды (2 часа)</li>
+      </ul>
+      <a href="#contact" class="price-cta">Выбрать Бизнес</a>
+    </div>
+    
+    <!-- Корпоратив -->
+    <div class="price">
+      <div class="price-name">Корпоративный</div>
+      <div class="price-desc">Для крупных компаний от 50 до 200 человек. Под ключ.</div>
+      <div class="price-amount">
+        <span class="price-currency">от $</span>
+        <span class="price-num">1200</span>
+      </div>
+      <div class="price-period">единоразово · индивидуальная настройка</div>
+      <div class="price-recurring">
+        + <strong>по договорённости</strong>
+      </div>
+      <ul class="price-features">
+        <li>До 200 пользователей</li>
+        <li>Всё из Бизнес</li>
+        <li>Развёртывание на вашем сервере</li>
+        <li>Брендирование под компанию</li>
+        <li>Интеграция с вашими системами (1С, Bitrix24, CRM)</li>
+        <li>Кастомные отчёты и аналитика</li>
+        <li>SLA 99.9% по аптайму</li>
+        <li>Персональный менеджер</li>
+        <li>Обучение всей команды</li>
+      </ul>
+      <a href="#contact" class="price-cta">Обсудить условия</a>
+    </div>
+  </div>
+  
+  <div class="pricing-note">
+    Оплата: Click, Payme, банковский перевод. Цены в сумах: <a href="#contact">уточнить курс</a>.
+  </div>
+</section>
+
+<!-- ═══ INTEGRATIONS ═══ -->
+<section class="section">
+  <div class="section-num">06 — Интеграции</div>
+  <h2 class="section-title">Подключается ко всему<br>что уже используете</h2>
+  <p class="section-subtitle">
+    Через Zapier и Make.com — 5000+ сервисов. Что бы вы ни использовали — мы подключимся.
+  </p>
+  
+  <div class="integrations">
+    <div class="integration">
+      <span class="integration-icon">📱</span>
+      Telegram
+    </div>
+    <div class="integration">
+      <span class="integration-icon">⚡</span>
+      Zapier
+    </div>
+    <div class="integration">
+      <span class="integration-icon">🔗</span>
+      Make.com
+    </div>
+    <div class="integration">
+      <span class="integration-icon">📅</span>
+      Google Calendar
+    </div>
+    <div class="integration">
+      <span class="integration-icon">📊</span>
+      Google Sheets
+    </div>
+    <div class="integration">
+      <span class="integration-icon">💬</span>
+      Slack
+    </div>
+    <div class="integration">
+      <span class="integration-icon">📝</span>
+      Notion
+    </div>
+    <div class="integration">
+      <span class="integration-icon">📧</span>
+      Gmail
+    </div>
+    <div class="integration">
+      <span class="integration-icon">🎯</span>
+      Trello
+    </div>
+    <div class="integration">
+      <span class="integration-icon">📂</span>
+      Dropbox
+    </div>
+    <div class="integration">
+      <span class="integration-icon">💼</span>
+      Bitrix24
+    </div>
+    <div class="integration">
+      <span class="integration-icon">📋</span>
+      Asana
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FAQ ═══ -->
+<section class="section" id="faq">
+  <div class="section-num">07 — Вопросы</div>
+  <h2 class="section-title">Часто задаваемые<br>вопросы</h2>
+  
+  <div class="faq">
+    <div class="faq-item">
+      <div class="faq-q">Безопасно ли хранить корпоративные задачи в Telegram-боте?</div>
+      <div class="faq-a"><div class="faq-a-inner">
+        Бот работает в приватном режиме — доступ только у тех кого вы пригласили. Данные хранятся на нашем защищённом сервере (или на вашем при корпоративном тарифе). Telegram использует шифрование MTProto. Мы не имеем доступа к вашим задачам без вашего разрешения.
+      </div></div>
+    </div>
+    
+    <div class="faq-item">
+      <div class="faq-q">Что если у нас уже больше 50 человек?</div>
+      <div class="faq-a"><div class="faq-a-inner">
+        В этом случае подходит Корпоративный тариф — до 200 пользователей с индивидуальной настройкой. Для команд больше 200 человек мы предлагаем enterprise-решение с развёртыванием на ваших серверах. Свяжитесь с нами для обсуждения.
+      </div></div>
+    </div>
+    
+    <div class="faq-item">
+      <div class="faq-q">Можно ли использовать на своём сервере?</div>
+      <div class="faq-a"><div class="faq-a-inner">
+        Да, в Корпоративном тарифе вы получаете полный исходный код и инструкцию по развёртыванию. Можем развернуть для вас на любой облачной платформе (AWS, DigitalOcean, локальные провайдеры РФ/Узбекистана) или ваших собственных серверах.
+      </div></div>
+    </div>
+    
+    <div class="faq-item">
+      <div class="faq-q">Что входит в стоимость установки?</div>
+      <div class="faq-a"><div class="faq-a-inner">
+        Развёртывание бота с вашим названием, настройка под ваши процессы (приоритеты, категории, проекты), создание начальных пользователей, базовое обучение, документация для команды и первый месяц поддержки. Кастомизация на Бизнес-тарифе включает индивидуальные шаблоны задач и интеграции.
+      </div></div>
+    </div>
+    
+    <div class="faq-item">
+      <div class="faq-q">Есть ли тестовый период?</div>
+      <div class="faq-a"><div class="faq-a-inner">
+        Бесплатный публичный бот <a href="https://t.me/DailyHelp" style="color: var(--accent);">@DailyHelp</a> доступен для тестирования прямо сейчас. Если хотите попробовать функционал коммерческого тарифа — предоставляем 14-дневный пробный период. Не подошло? Полный возврат денег.
+      </div></div>
+    </div>
+    
+    <div class="faq-item">
+      <div class="faq-q">Какие интеграции поддерживаются?</div>
+      <div class="faq-a"><div class="faq-a-inner">
+        Через Zapier и Make.com — более 5000 сервисов: Google Calendar, Slack, Notion, Gmail, Sheets, Trello, Asana, Discord, и любые другие. Веб-хуки позволяют отправлять события задач на любой URL. Для локального рынка возможны интеграции с 1С, Bitrix24, amoCRM.
+      </div></div>
+    </div>
+    
+    <div class="faq-item">
+      <div class="faq-q">Что если бот перестанет работать?</div>
+      <div class="faq-a"><div class="faq-a-inner">
+        У нас круглосуточный мониторинг через Sentry и UptimeRobot — мы узнаём о сбоях за минуту. На Бизнес и Корпоративном тарифах гарантируем SLA 99.5% и 99.9% соответственно. В случае инцидента — компенсация по договору.
+      </div></div>
+    </div>
+    
+    <div class="faq-item">
+      <div class="faq-q">Можно ли работать офлайн?</div>
+      <div class="faq-a"><div class="faq-a-inner">
+        Telegram кеширует сообщения и синхронизируется когда появляется сеть. Веб-дашборд можно установить как PWA-приложение. Критичные уведомления для Корпоративного тарифа могут дублироваться по SMS через Eskiz.uz или Twilio.
+      </div></div>
+    </div>
+    
+    <div class="faq-item">
+      <div class="faq-q">Поддерживается ли узбекский язык?</div>
+      <div class="faq-a"><div class="faq-a-inner">
+        Интерфейс бота и дашборда — на русском. AI распознаёт задачи на русском и английском. В планах — добавление узбекского языка (латиница и кириллица) в Q3 2026.
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FINAL CTA ═══ -->
+<section class="cta-final" id="contact">
+  <h2 class="cta-final-title">Готовы автоматизировать команду?</h2>
+  <p class="cta-final-sub">
+    Свяжитесь — бесплатная консультация 30 минут. Покажем демо, ответим на вопросы, подберём оптимальный тариф под ваши процессы.
+  </p>
+  <div class="cta-final-actions">
+    <a href="https://t.me/jorayev0223" class="btn btn-primary">
+      <span>Написать в Telegram</span>
+      <span>→</span>
+    </a>
+    <a href="mailto:hello@jarvis-bot.uz" class="btn btn-ghost">
+      <span>✉</span>
+      <span>hello@jarvis-bot.uz</span>
+    </a>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand">J.A.R.V.I.S.</div>
+      <p class="footer-tagline">
+        AI-ассистент для команд в Telegram. Управляйте задачами голосом и текстом — без переключения на новые приложения.
+      </p>
+    </div>
+    
+    <div>
+      <div class="footer-col-title">Продукт</div>
+      <a href="#features" class="footer-link">Возможности</a>
+      <a href="#how" class="footer-link">Как работает</a>
+      <a href="#pricing" class="footer-link">Тарифы</a>
+      <a href="#faq" class="footer-link">FAQ</a>
+    </div>
+    
+    <div>
+      <div class="footer-col-title">Контакты</div>
+      <a href="https://t.me/Explosive_Maverick" class="footer-link">Telegram</a>
+      <a href="mailto:jorayev0223@gmail.com" class="footer-link">Email</a>
+      <a href="tel:+998909156867" class="footer-link">+998 90 915 68 67</a>
+    </div>
+    
+    <div>
+      <div class="footer-col-title">Документы</div>
+      <a href="#" class="footer-link">Политика конфиденциальности</a>
+      <a href="#" class="footer-link">Условия использования</a>
+      <a href="#" class="footer-link">Договор оферты</a>
+    </div>
+  </div>
+  
+  <div class="footer-bottom">
+    <div>© 2026 J.A.R.V.I.S. · Ташкент, Узбекистан</div>
+    <div>BUILT IN UZBEKISTAN 🇺🇿</div>
+  </div>
+</footer>
+
+<script>
+// FAQ accordion
+document.querySelectorAll('.faq-q').forEach(q => {
+  q.addEventListener('click', () => {
+    const item = q.parentElement;
+    item.classList.toggle('open');
+  });
+});
+
+// Smooth scroll for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(link => {
+  link.addEventListener('click', e => {
+    const target = document.querySelector(link.getAttribute('href'));
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+
+// Reveal animations on scroll
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.style.opacity = '1';
+      entry.target.style.transform = 'translateY(0)';
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.feature, .step, .price, .use-case, .integration').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(20px)';
+  el.style.transition = 'opacity 0.5s, transform 0.5s';
+  observer.observe(el);
+});
+</script>
+
+</body>
+</html>
